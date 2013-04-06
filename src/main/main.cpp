@@ -20,6 +20,13 @@
 
 */
 
+#ifdef WIN32
+#   include <windows.h>
+#else
+#   include <sys/time.h>
+#   include <sys/resource.h>
+#endif
+
 #include <iostream>
 #include <string>
 #include <exception>
@@ -431,6 +438,7 @@ Thank you!\n";
 #################################################################\n";
 
 	try {
+        const clock_t start_time = clock();
 		std::string rigid_name, ligand_name, flex_name, config_name, out_name, log_name;
 		fl center_x, center_y, center_z, size_x, size_y, size_z;
 		int cpu = 0, seed, exhaustiveness, verbosity = 2, num_modes = 9;
@@ -659,6 +667,34 @@ Thank you!\n";
 					gd, exhaustiveness,
 					weights,
 					cpu, seed, verbosity, max_modes_sz, energy_range, log);
+
+        const double seconds = double(clock() - start_time) / CLOCKS_PER_SEC;
+        log << "Finished in " << seconds << " clock seconds, ";
+#ifdef WIN32
+        FILETIME kernelTime = { 0 };
+        FILETIME userTime = { 0 };
+        FILETIME unusedTime;
+        GetProcessTimes(GetCurrentProcess(),
+                        &unusedTime,
+                        &unusedTime,
+                        &kernelTime,
+                        &userTime);
+
+        SYSTEMTIME systemTime = { 0 };
+        FileTimeToSystemTime(&kernelTime, &systemTime);
+        double cpuTime = (systemTime.wHour * 60. * 60.) + (systemTime.wMinute * 60.) +
+                                systemTime.wSecond + (1.0 / systemTime.wMilliseconds);
+        FileTimeToSystemTime(&userTime, &systemTime);
+        cpuTime += (systemTime.wHour * 60. * 60.) + (systemTime.wMinute * 60.) +
+                    systemTime.wSecond + (1.0 / systemTime.wMilliseconds);
+        log << cpuTime << " cpu seconds.";
+#else
+        struct rusage usage;
+        getrusage(RUSAGE_SELF, &usage);
+        log << "System: " << usage.ru_stime.tv_sec << '.' << usage.ru_stime.tv_usec << " seconds, ";
+        log << "User: " << usage.ru_utime.tv_sec << '.' << usage.ru_utime.tv_usec << " seconds.";
+#endif
+        log.endl();
 	}
 	catch(file_error& e) {
 		std::cerr << "\n\nError: could not open \"" << e.name.native().c_str() << "\" for " << (e.in ? "reading" : "writing") << ".\n";
