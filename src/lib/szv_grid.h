@@ -33,8 +33,9 @@ struct szv_grid {
 	fl average_num_possibilities() const;
 private:
 	array3d<szv> m_data;
-	vec m_init;
-	vec m_range;
+	const vec m_init;
+	const vec m_end;
+	const vec m_range;
 	vec index_to_coord(sz i, sz j, sz k) const;
 };
 

@@ -33,8 +33,8 @@ struct non_cache : public igrid {
 	bool within(const model& m, fl margin = 0.0001) const;
 	fl slope;
 private:
-	szv_grid sgrid;
-	grid_dims gd;
+	const szv_grid sgrid;
+	const grid_dims gd;
 	const precalculate* p;
 };
 
