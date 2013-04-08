@@ -23,20 +23,18 @@
 #include "szv_grid.h"
 #include "brick.h"
 
-szv_grid::szv_grid(const model& m, const grid_dims& gd, fl cutoff_sqr) : m_data(gd[0].n, gd[1].n, gd[2].n) {
-	vec end;
-	VINA_FOR_IN(i, gd) {
-		m_init[i] = gd[i].begin;
-		end   [i] = gd[i].end;
-	}
-	m_range = end - m_init;
-
+szv_grid::szv_grid(const model& m, const grid_dims& gd, fl cutoff_sqr)
+    : m_data(gd[0].n, gd[1].n, gd[2].n),
+      m_init(gd[0].begin, gd[1].begin, gd[2].begin),
+      m_end(gd[0].end, gd[1].end, gd[2].end),
+      m_range(m_end - m_init)
+{
 	const sz nat = num_atom_types(m.atom_typing_used());
 
 	szv relevant_indexes;
 	VINA_FOR_IN(i, m.grid_atoms) {
 		const atom& a = m.grid_atoms[i];
-		if(a.get(m.atom_typing_used()) < nat && brick_distance_sqr(m_init, end, a.coords) < cutoff_sqr)
+		if(a.get(m.atom_typing_used()) < nat && brick_distance_sqr(m_init, m_end, a.coords) < cutoff_sqr)
 			relevant_indexes.push_back(i);
 	}
 
@@ -64,7 +62,7 @@ fl szv_grid::average_num_possibilities() const {
 
 const szv& szv_grid::possibilities(const vec& coords) const {
 	boost::array<sz, 3> index;
-	VINA_FOR_IN(i, index) {
+    VINA_FOR(i, index.static_size) {
 		assert(coords[i] + epsilon_fl >= m_init[i]);
 		assert(coords[i] <= m_init[i] + m_range[i] + epsilon_fl);
 		const fl tmp = (coords[i] - m_init[i]) * m_data.dim(i) / m_range[i];
@@ -74,21 +72,20 @@ const szv& szv_grid::possibilities(const vec& coords) const {
 }
 
 vec szv_grid::index_to_coord(sz i, sz j, sz k) const {
-	vec index(i, j, k);
-	vec tmp;
-	VINA_FOR_IN(n, tmp) 
-		tmp[n] = m_init[n] + m_range[n] * index[n] / m_data.dim(n);
-	return tmp;
+    assert(m_init.size() == m_range.size() && m_range.size() == 3);
+	return vec(m_init[0] + m_range[0] * i / m_data.dim0(),
+               m_init[1] + m_range[1] * j / m_data.dim1(),
+               m_init[2] + m_range[2] * k / m_data.dim2());
 }
 
 grid_dims szv_grid_dims(const grid_dims& gd) {
 	grid_dims tmp;
-	VINA_FOR_IN(i, tmp) {
+    VINA_FOR(i, tmp.static_size) {
 		tmp[i].begin = gd[i].begin;
 		tmp[i].end   = gd[i].end;
-		fl n_fl = (gd[i].end - gd[i].begin) / 3; // 3A preferred size
-		int n_int = int(n_fl);
-		tmp[i].n     = (n_int < 1) ?  1 : sz(n_int);
+		const fl n_fl = (gd[i].end - gd[i].begin) / 3; // 3A preferred size
+		const int n_int = int(n_fl);
+		tmp[i].n = (n_int < 1) ?  1 : sz(n_int);
 	}
 	return tmp;
 }
