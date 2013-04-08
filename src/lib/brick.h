@@ -28,19 +28,19 @@
 inline fl closest_between(fl begin, fl end, fl x) {
 	assert(begin <= end);
 	if(x <= begin) return begin;
-	else if(x >= end) return end;
+	if(x >= end) return end;
 	return x;
 }
 
 inline vec brick_closest(const vec& begin, const vec& end, const vec& v) {
-	vec tmp;
-	VINA_FOR_IN(i, tmp)
-		tmp[i] = closest_between(begin[i], end[i], v[i]);
-	return tmp;
+    assert(begin.size() == end.size() && end.size() == v.size() && v.size() == 3);
+    return vec(closest_between(begin[0], end[0], v[0]),
+               closest_between(begin[1], end[1], v[1]),
+               closest_between(begin[2], end[2], v[2]));
 }
 
 inline fl brick_distance_sqr(const vec& begin, const vec& end, const vec& v) {
-	vec closest; closest = brick_closest(begin, end, v);
+	const vec closest = brick_closest(begin, end, v);
 	return vec_distance_sqr(closest, v);
 }
 
