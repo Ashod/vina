@@ -55,10 +55,11 @@ typedef std::size_t sz;
 typedef std::pair<fl, fl> pr;
 
 struct vec {
-	fl data[3];
+    enum { static_size = 3 };
+	fl data[static_size];
 	vec() {
 #ifndef NDEBUG
-		data[0] = data[1] = data[2] = not_a_num;
+		assign(not_a_num);
 #endif
 	}
 	vec(fl x, fl y, fl z) {
@@ -66,8 +67,8 @@ struct vec {
 		data[1] = y;
 		data[2] = z;
 	}
-	const fl& operator[](sz i) const { assert(i < 3); return data[i]; }
-	      fl& operator[](sz i)       { assert(i < 3); return data[i]; }
+	const fl& operator[](sz i) const { assert(i < static_size); return data[i]; }
+	      fl& operator[](sz i)       { assert(i < static_size); return data[i]; }
     fl norm_sqr() const {
 		return sqr(data[0]) + sqr(data[1]) + sqr(data[2]);
 	}
@@ -120,7 +121,7 @@ struct vec {
 	void assign(fl s) {
 		data[0] = data[1] = data[2] = s;
 	}
-	sz size() const { return 3; }
+	sz size() const { return static_size; }
 private:
 	friend class boost::serialization::access;
 	template<class Archive> 
@@ -146,7 +147,8 @@ inline vec elementwise_product(const vec& a, const vec& b) {
 }
 
 struct mat {
-	fl data[9];
+    enum { static_size = 9 };
+	fl data[static_size];
 	mat() {
 #ifndef NDEBUG
 		data[0] = data[1] = data[2] =
@@ -172,7 +174,7 @@ struct mat {
 				   data[2]*v[0] + data[5]*v[1] + data[8]*v[2]);
 	}
 	const mat& operator*=(fl s) {
-		VINA_FOR(i, 9)
+		VINA_FOR(i, static_size)
 			data[i] *= s;
 		return *this;
 	}
