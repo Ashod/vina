@@ -20,7 +20,7 @@
 
 */
 
-#ifdef WIN32
+#if defined(WIN32) || defined(WIN64)
 #   include <windows.h>
 #else
 #   include <sys/time.h>
@@ -400,6 +400,35 @@ model parse_bundle(const boost::optional<std::string>& rigid_name_opt, const boo
 		return parse_bundle(ligand_names);
 }
 
+static double getCpuTime()
+{
+#ifdef WIN32
+    FILETIME kernelTime = { 0 };
+    FILETIME userTime = { 0 };
+    FILETIME unusedTime;
+    GetProcessTimes(GetCurrentProcess(),
+                    &unusedTime,
+                    &unusedTime,
+                    &kernelTime,
+                    &userTime);
+
+    SYSTEMTIME systemTime = { 0 };
+    FileTimeToSystemTime(&kernelTime, &systemTime);
+    double cpuTime = (systemTime.wHour * 60. * 60.) + (systemTime.wMinute * 60.) +
+                        systemTime.wSecond + (systemTime.wMilliseconds / 1000.);
+    FileTimeToSystemTime(&userTime, &systemTime);
+    cpuTime += (systemTime.wHour * 60. * 60.) + (systemTime.wMinute * 60.) +
+                systemTime.wSecond + (systemTime.wMilliseconds / 1000.);
+    return cpuTime;
+#else
+    struct rusage usage;
+    getrusage(RUSAGE_SELF, &usage);
+    double cpuTime = usage.ru_stime.tv_sec + (usage.ru_stime.tv_usec / 1000000.);
+    cpuTime += usage.ru_utime.tv_sec + (usage.ru_stime.ru_utime / 1000000.);
+    return cpuTime;
+#endif
+}
+
 int main(int argc, char* argv[]) {
 	using namespace boost::program_options;
 	const std::string version_string = "AutoDock Vina 1.1.2 (May 11, 2011)";
@@ -661,6 +690,10 @@ Thank you!\n";
 		boost::optional<model> ref;
 		done(verbosity, log);
 
+        log << "Ready in " << (double(clock() - start_time) / CLOCKS_PER_SEC)
+            << " clock seconds, " << getCpuTime() << " cpu seconds.";
+        log.endl();
+
 		main_procedure(m, ref, 
 					out_name,
 					score_only, local_only, randomize_only, false, // no_cache == false
@@ -668,32 +701,8 @@ Thank you!\n";
 					weights,
 					cpu, seed, verbosity, max_modes_sz, energy_range, log);
 
-        const double seconds = double(clock() - start_time) / CLOCKS_PER_SEC;
-        log << "Finished in " << seconds << " clock seconds, ";
-#ifdef WIN32
-        FILETIME kernelTime = { 0 };
-        FILETIME userTime = { 0 };
-        FILETIME unusedTime;
-        GetProcessTimes(GetCurrentProcess(),
-                        &unusedTime,
-                        &unusedTime,
-                        &kernelTime,
-                        &userTime);
-
-        SYSTEMTIME systemTime = { 0 };
-        FileTimeToSystemTime(&kernelTime, &systemTime);
-        double cpuTime = (systemTime.wHour * 60. * 60.) + (systemTime.wMinute * 60.) +
-                                systemTime.wSecond + (1.0 / systemTime.wMilliseconds);
-        FileTimeToSystemTime(&userTime, &systemTime);
-        cpuTime += (systemTime.wHour * 60. * 60.) + (systemTime.wMinute * 60.) +
-                    systemTime.wSecond + (1.0 / systemTime.wMilliseconds);
-        log << cpuTime << " cpu seconds.";
-#else
-        struct rusage usage;
-        getrusage(RUSAGE_SELF, &usage);
-        log << "System: " << usage.ru_stime.tv_sec << '.' << usage.ru_stime.tv_usec << " seconds, ";
-        log << "User: " << usage.ru_utime.tv_sec << '.' << usage.ru_utime.tv_usec << " seconds.";
-#endif
+        log << "Finished in " << (double(clock() - start_time) / CLOCKS_PER_SEC)
+            << " clock seconds, " << getCpuTime() << " cpu seconds.";
         log.endl();
 	}
 	catch(file_error& e) {
