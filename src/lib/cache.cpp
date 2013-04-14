@@ -134,7 +134,7 @@ void cache::populate(const model& m, const precalculate& p, const szv& atom_type
 		VINA_FOR(y, g.m_data.dim1()) {
 			VINA_FOR(z, g.m_data.dim2()) {
 				std::fill(affinities.begin(), affinities.end(), 0);
-				vec probe_coords; probe_coords = g.index_to_argument(x, y, z);
+				const vec probe_coords = g.index_to_argument(x, y, z);
 				const szv& possibilities = ig.possibilities(probe_coords);
 				VINA_FOR_IN(possibilities_i, possibilities) {
 					const sz i = possibilities[possibilities_i];
@@ -152,7 +152,7 @@ void cache::populate(const model& m, const precalculate& p, const szv& atom_type
 					}
 				}
 				VINA_FOR_IN(j, needed) {
-					sz t = needed[j];
+					const sz t = needed[j];
 					assert(t < nat);
 					grids[t].m_data(x, y, z) = affinities[j];
 				}

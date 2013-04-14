@@ -29,7 +29,7 @@ typedef triangular_matrix<fl> flmat;
 
 template<typename Change>
 void minus_mat_vec_product(const flmat& m, const Change& in, Change& out) {
-	sz n = m.dim();
+	const sz n = m.dim();
 	VINA_FOR(i, n) {
 		fl sum = 0;
 		VINA_FOR(j, n)
@@ -39,7 +39,7 @@ void minus_mat_vec_product(const flmat& m, const Change& in, Change& out) {
 }
 
 template<typename Change>
-inline fl scalar_product(const Change& a, const Change& b, sz n) {
+inline fl scalar_product(const Change& a, const Change& b, const sz n) {
 	fl tmp = 0;
 	VINA_FOR(i, n)
 		tmp += a(i) * b(i);
@@ -94,7 +94,7 @@ void subtract_change(Change& b, const Change& a, sz n) { // b -= a
 
 template<typename F, typename Conf, typename Change>
 fl bfgs(F& f, Conf& x, Change& g, const unsigned max_steps, const fl average_required_improvement, const sz over) { // x is I/O, final value is returned
-	sz n = g.num_floats();
+	const sz n = g.num_floats();
 	flmat h(n, 0);
 	set_diagonal(h, 1);
 
